@@ -39,15 +39,13 @@ jobs:
         # exit-zero treats all errors as warnings
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
-    - name: Run tests with pytest and coverage
+    - name: Run tests with pytest
       run: |
-        pytest --cov=./ --cov-report=xml
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
+        pytest
+        
+    - name: Generate test coverage report
+      run: |
+        pytest --cov=./ --cov-report=term
 
   deploy:
     needs: test
