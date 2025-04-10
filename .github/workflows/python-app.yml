@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +34,28 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
-
+        
     - name: Check application startup
       run: |
         python -c "import app; app.app.test_client()"
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Deploy to Production
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+      run: |
+        if [ -n "$HEROKU_API_KEY" ] && [ -n "$HEROKU_APP_NAME" ]; then
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku git:remote -a $HEROKU_APP_NAME
+          git push heroku main
+        else
+          echo "Skipping Heroku deployment - credentials not configured"
+        fi
