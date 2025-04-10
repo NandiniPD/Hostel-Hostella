@@ -3,6 +3,7 @@ import mysql.connector,webbrowser
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from datetime import timedelta, datetime
+import os
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -10,18 +11,18 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # Set session dura
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_TYPE'] = "filesystem"
 
-# Database Configuration
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'qwerty1234',  # Change this to your MySQL password
-    'database': 'hostel_db'
+# Update database configuration to use environment variables
+db_config = {
+    'host': os.getenv('MYSQL_HOST', 'localhost'),
+    'user': os.getenv('MYSQL_USER', 'root'),
+    'password': os.getenv('MYSQL_PASSWORD', ''),
+    'database': os.getenv('MYSQL_DB', 'hostel_db')
 }
 
 # Function to get MySQL Connection
 def get_db_connection():
     try:
-        conn = mysql.connector.connect(**DB_CONFIG)
+        conn = mysql.connector.connect(**db_config)
         return conn
     except Exception as e:
         print(f"Database connection error: {e}")
@@ -1610,4 +1611,5 @@ def get_payment_history(student_id):
         conn.close()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
