@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fee Structure & Payment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; }
+        .fee-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status-Paid { background-color: #d4edda; color: #155724; }
+        .status-Pending { background-color: #fff3cd; color: #856404; }
+        .status-Overdue { background-color: #f8d7da; color: #721c24; }
+        .bank-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="mb-4">Fee Structure & Payment</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Your Fee Status -->
+        <div class="fee-card">
+            <h4>Your Fee Status</h4>
+            {% if student_fees %}
+                {% for fee in student_fees %}
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <strong>{{ fee.semester }}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <span>Total: ₹{{ fee.total_amount }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span>Paid: ₹{{ fee.amount_paid }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="status-badge status-{{ fee.status }}">{{ fee.status }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No fee records found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Fee Structure -->
+        <div class="fee-card">
+            <h4>Fee Structure for {{ fee_structure.academic_year }}</h4>
+            {% for semester in fee_structure.semesters %}
+                <div class="mb-4">
+                    <h5>{{ semester.name }}</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p><strong>Room Rent:</strong> ₹{{ semester.room_rent }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Mess Fees:</strong> ₹{{ semester.mess_fees }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Maintenance:</strong> ₹{{ semester.maintenance }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Total:</strong> ₹{{ semester.total }}</p>
+                        </div>
+                    </div>
+                    <p class="text-danger">Due Date: {{ semester.due_date }}</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Make Payment -->
+        <div class="fee-card">
+            <h4>Make Payment</h4>
+            <form action="{{ url_for('submit_fee_payment') }}" method="POST">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Select Semester</label>
+                            <select name="semester" class="form-select" required>
+                                {% for semester in fee_structure.semesters %}
+                                    <option value="{{ semester.name }}">{{ semester.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Amount</label>
+                            <input type="number" name="amount" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <select name="payment_method" class="form-select" required>
+                                {% for method in fee_structure.payment_methods %}
+                                    <option value="{{ method }}">{{ method }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Transaction ID</label>
+                    <input type="text" name="transaction_id" class="form-control" id="transactionIdInput">
+                    <div class="form-text mt-2">
+                        <strong>Where to find Transaction ID:</strong><br>
+                        - Bank Transfer: UTR number from your bank statement/receipt<br>
+                        - UPI: Reference number from your UPI app (PhonePe/Google Pay/etc.)<br>
+                        - Cheque: Cheque number<br>
+                        - Cash: Leave empty
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Payment</button>
+            </form>
+        </div>
+
+        <!-- Bank Details -->
+        <div class="bank-details">
+            <h4>Bank Details</h4>
+            <p><strong>Bank Name:</strong> {{ fee_structure.bank_details.bank_name }}</p>
+            <p><strong>Account Name:</strong> {{ fee_structure.bank_details.account_name }}</p>
+            <p><strong>Account Number:</strong> {{ fee_structure.bank_details.account_number }}</p>
+            <p><strong>IFSC Code:</strong> {{ fee_structure.bank_details.ifsc_code }}</p>
+            <div class="alert alert-info mt-2">
+                <i class="fas fa-info-circle"></i> Please include your Student ID in the payment reference/remarks.
+            </div>
+        </div>
+
+        <!-- Back to Dashboard -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMethodSelect = document.querySelector('select[name="payment_method"]');
+        const transactionIdInput = document.getElementById('transactionIdInput');
+        const form = document.querySelector('form');
+
+        // Update transaction ID field based on payment method
+        paymentMethodSelect.addEventListener('change', function() {
+            if (this.value === 'Cash') {
+                transactionIdInput.removeAttribute('required');
+                transactionIdInput.setAttribute('disabled', 'disabled');
+                transactionIdInput.value = '';
+            } else {
+                transactionIdInput.setAttribute('required', 'required');
+                transactionIdInput.removeAttribute('disabled');
+            }
+        });
+
+        // Initial setup
+        if (paymentMethodSelect.value === 'Cash') {
+            transactionIdInput.removeAttribute('required');
+            transactionIdInput.setAttribute('disabled', 'disabled');
+        }
+
+        // Form validation
+        form.addEventListener('submit', function(e) {
+            const amount = document.querySelector('input[name="amount"]').value;
+            if (amount <= 0) {
+                e.preventDefault();
+                alert('Please enter a valid amount greater than 0');
+                return;
+            }
+
+            if (paymentMethodSelect.value !== 'Cash' && !transactionIdInput.value.trim()) {
+                e.preventDefault();
+                alert('Transaction ID is required for ' + paymentMethodSelect.value + ' payments');
+                return;
+            }
+        });
+    });
+    </script>
+</body>
+</html> 

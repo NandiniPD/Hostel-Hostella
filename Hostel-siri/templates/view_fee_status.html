@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fee Status Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; }
+        .fee-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status-Paid { background-color: #d4edda; color: #155724; }
+        .status-Pending { background-color: #fff3cd; color: #856404; }
+        .status-Overdue { background-color: #f8d7da; color: #721c24; }
+        .action-buttons { gap: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Fee Status Management</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFeeModal">
+                <i class="fas fa-plus"></i> Add New Fee Record
+            </button>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Fee Records -->
+        {% if fee_status %}
+            {% for record in fee_status %}
+                <div class="fee-card">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h5>{{ record.name }}</h5>
+                            <p class="text-muted mb-0">ID: {{ record.id }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Amount Due:</strong> ₹{{ record.amount_due }}</p>
+                            <p class="mb-1"><strong>Amount Paid:</strong> ₹{{ record.amount_paid }}</p>
+                            <p class="mb-0"><strong>Last Payment:</strong> 
+                                {% if record.last_payment_date %}
+                                    {{ record.last_payment_date.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    No payments yet
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="status-badge status-{{ record.fee_status }}">
+                                {{ record.fee_status }}
+                            </span>
+                            <div class="d-flex justify-content-end mt-2 action-buttons">
+                                <button class="btn btn-info btn-sm" onclick="viewHistory('{{ record.id }}')">
+                                    <i class="fas fa-history"></i> View History
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No fee records found.
+            </div>
+        {% endif %}
+
+        <!-- Add Fee Record Modal -->
+        <div class="modal fade" id="addFeeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Fee Record</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{{ url_for('add_fee_record') }}" method="POST">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Student</label>
+                                <select name="student_id" class="form-select" required>
+                                    <option value="">Select Student</option>
+                                    {% for student in students %}
+                                        <option value="{{ student.id }}">{{ student.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Semester</label>
+                                <select name="semester" class="form-select" required>
+                                    <option value="Semester 1">Semester 1</option>
+                                    <option value="Semester 2">Semester 2</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Total Amount</label>
+                                <input type="number" name="total_amount" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Due Date</label>
+                                <input type="date" name="due_date" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Add Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Dashboard -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function viewHistory(studentId) {
+            fetch(`/get_payment_history/${studentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('paymentHistoryTable');
+                    tableBody.innerHTML = '';
+                    
+                    if (data.payments.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No payment history found</td></tr>';
+                        return;
+                    }
+
+                    data.payments.forEach(payment => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${new Date(payment.payment_date).toLocaleString()}</td>
+                            <td>${payment.semester}</td>
+                            <td>₹${payment.amount_paid}</td>
+                            <td>${payment.payment_method || '-'}</td>
+                            <td>${payment.transaction_id || '-'}</td>
+                            <td><span class="badge bg-${payment.status === 'Paid' ? 'success' : 'warning'}">${payment.status}</span></td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching payment history:', error);
+                    document.getElementById('paymentHistoryTable').innerHTML = 
+                        '<tr><td colspan="6" class="text-center text-danger">Error loading payment history</td></tr>';
+                });
+
+            new bootstrap.Modal(document.getElementById('historyModal')).show();
+        }
+
+        // Add client-side validation for transaction ID
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentForm = document.querySelector('#paymentModal form');
+            const paymentMethodSelect = paymentForm.querySelector('select[name="payment_method"]');
+            const transactionIdInput = paymentForm.querySelector('input[name="transaction_id"]');
+
+            paymentMethodSelect.addEventListener('change', function() {
+                if (this.value !== 'Cash') {
+                    transactionIdInput.setAttribute('required', 'required');
+                } else {
+                    transactionIdInput.removeAttribute('required');
+                }
+            });
+
+            paymentForm.addEventListener('submit', function(e) {
+                const amount = this.querySelector('input[name="amount"]').value;
+                if (parseFloat(amount) <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid amount greater than 0');
+                    return;
+                }
+
+                if (paymentMethodSelect.value !== 'Cash' && !transactionIdInput.value.trim()) {
+                    e.preventDefault();
+                    alert('Transaction ID is required for ' + paymentMethodSelect.value + ' payments');
+                    return;
+                }
+            });
+        });
+    </script>
+
+    <!-- Payment History Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="paymentHistoryContent">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Semester</th>
+                                    <th>Amount</th>
+                                    <th>Payment Method</th>
+                                    <th>Transaction ID</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentHistoryTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

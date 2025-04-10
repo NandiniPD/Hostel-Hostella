@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostel Mess Menu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e88e5, #1565c0);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .menu-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .menu-header {
+            background: #1976d2;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .menu-content {
+            padding: 1.5rem;
+        }
+
+        .meal-type {
+            margin-bottom: 1rem;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .breakfast {
+            background-color: #e3f2fd;
+        }
+
+        .lunch {
+            background-color: #fff3e0;
+        }
+
+        .dinner {
+            background-color: #f3e5f5;
+        }
+
+        .meal-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .meal-title {
+            font-weight: 600;
+            color: #2196f3;
+            margin-bottom: 0.5rem;
+        }
+
+        .meal-items {
+            color: #555;
+            font-size: 0.95rem;
+            margin-left: 30px;
+        }
+
+        .back-btn {
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .refresh-text {
+            color: #666;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .menu-card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="header">
+        <h1><i class="fas fa-utensils"></i> Hostel Mess Menu</h1>
+        
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row" id="menuContent">
+            {% for day_menu in menu %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="menu-card">
+                        <div class="menu-header">
+                            {{ day_menu.day }}
+                        </div>
+                        <div class="menu-content">
+                            <div class="meal-type breakfast">
+                                <div class="meal-title">
+                                    <i class="fas fa-coffee meal-icon"></i>Breakfast
+                                </div>
+                                <div class="meal-items">
+                                    {{ day_menu.breakfast }}
+                                </div>
+                            </div>
+
+                            <div class="meal-type lunch">
+                                <div class="meal-title">
+                                    <i class="fas fa-sun meal-icon"></i>Lunch
+                                </div>
+                                <div class="meal-items">
+                                    {{ day_menu.lunch }}
+                                </div>
+                            </div>
+
+                            <div class="meal-type dinner">
+                                <div class="meal-title">
+                                    <i class="fas fa-moon meal-icon"></i>Dinner
+                                </div>
+                                <div class="meal-items">
+                                    {{ day_menu.dinner }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center back-btn">
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <p class="refresh-text">
+            <i class="fas fa-sync-alt"></i> Menu updates automatically every 5 minutes
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh function
+        function refreshMenu() {
+            fetch('/get_latest_mess_menu')
+            .then(response => response.json())
+            .then(data => {
+                    if (data.menu && data.menu.length > 0) {
+                        const menuContent = document.getElementById('menuContent');
+                        menuContent.innerHTML = data.menu.map(dayMenu => `
+                            <div class="col-md-6 col-lg-4">
+                                <div class="menu-card">
+                                    <div class="menu-header">
+                                        ${dayMenu.day}
+                                    </div>
+                                    <div class="menu-content">
+                                        <div class="meal-type breakfast">
+                                            <div class="meal-title">
+                                                <i class="fas fa-coffee meal-icon"></i>Breakfast
+                                            </div>
+                                            <div class="meal-items">
+                                                ${dayMenu.breakfast}
+                                            </div>
+                                        </div>
+                                        <div class="meal-type lunch">
+                                            <div class="meal-title">
+                                                <i class="fas fa-sun meal-icon"></i>Lunch
+                                            </div>
+                                            <div class="meal-items">
+                                                ${dayMenu.lunch}
+                                            </div>
+                                        </div>
+                                        <div class="meal-type dinner">
+                                            <div class="meal-title">
+                                                <i class="fas fa-moon meal-icon"></i>Dinner
+                                            </div>
+                                            <div class="meal-items">
+                                                ${dayMenu.dinner}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                })
+                .catch(error => console.error('Error refreshing menu:', error));
+        }
+
+        // Refresh every 5 minutes
+        setInterval(refreshMenu, 300000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+/* Reset Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Background Container */
+.background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background 1s ease-in-out;
+    z-index: -1;
+}
+
+/* Dark Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 0;
+}
+
+/* Login Container */
+.login-container {
+    position: relative;
+    width: 350px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    color: white;
+    margin: 10% auto;
+    z-index: 1;
+}
+
+/* Input Fields */
+.input-field {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Placeholder Text */
+.input-field::placeholder {
+    color: #ddd;
+}
+
+/* Flash Messages */
+.flash-messages p {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.success { background: green; color: white; }
+.danger { background: red; color: white; }
+.warning { background: orange; color: white; }
+
+/* Buttons */
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.links a {
+    color: rgb(255, 255, 255);  /* Makes links white */
+    text-decoration: none;
+}
+
+.links a:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+
+/* Button styles */
+.btn {
+    display: inline-block;
+    padding: 12px 25px;
+    font-size: 18px;
+    text-decoration: none;
+    color: white;
+    background-color: #007bff;
+    border-radius: 5px;
+    margin: 10px;
+    transition: 0.3s;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+
+
+/* ---------register.css------------*/
+.register-container {
+    width: 400px;
+    margin: 80px auto;
+    padding: 20px;
+    text-align: center;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+.register-container h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.register-container input,
+.register-container select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.register-container button {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.register-container button:hover {
+    background: #0056b3;
+}
+
+.register-btn {
+    padding: 10px 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.register-btn:hover {
+    background: #218838;
+}
+
+

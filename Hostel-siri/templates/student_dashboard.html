@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            height: 150px; /* Fixed smaller height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .dashboard-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            margin: 5px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        /* Complaint Card Styles */
+        .complaint-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: white;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-resolved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .notification {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+
+        .timestamp {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .category-badge {
+            margin-right: 10px;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 12px;
+        }
+
+        .modal-header {
+            background: #007BFF;
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .fee-info {
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            margin-bottom: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-overdue {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Add these new styles for flash messages */
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .flash-message {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .flash-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Add this for the attendance status display */
+        .attendance-status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Flash Messages Container -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <h1 class="text-center mb-0">Student Dashboard</h1>
+            <div class="text-center mt-2" style="color: white;">
+                {% if student %}
+                    <h3>Welcome, {{ student.name }}!</h3>
+                {% else %}
+                    <p>No student data found!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-container">
+            <!-- Room Allocation Card -->
+            <div class="dashboard-card">
+                <h2><i class="fas fa-bed"></i> Room Allocation</h2>
+                <a href="{{ url_for('room_alloc') }}" class="btn btn-primary">Check Allocation</a>
+            </div>
+
+            <!-- Complaints Card -->
+            <div class="dashboard-card">
+                <h2><i class="fas fa-exclamation-circle"></i> Complaints</h2>
+                <a href="{{ url_for('view_student_complaints') }}" class="btn btn-primary">View Complaints</a>
+            </div>
+
+            <!-- Fee Status Card -->
+            <div class="dashboard-card">
+                <h2><i class="fas fa-money-bill-wave"></i> Fee Status</h2>
+                <a href="{{ url_for('fee_structure') }}" class="btn btn-primary">View Fee Status</a>
+            </div>
+
+            <!-- Updated Attendance Card -->
+            <div class="dashboard-card">
+                <h2><i class="fas fa-calendar-check"></i> Attendance</h2>
+                <div>
+                    <form action="{{ url_for('mark_attendance') }}" method="POST" style="display: inline;">
+                        <input type="hidden" name="status" value="Present">
+                        <button type="submit" class="btn btn-success">Mark</button>
+                    </form>
+                    <a href="{{ url_for('view_attendance') }}" class="btn btn-primary">View</a>
+                </div>
+                {% if attendance_marked %}
+                    <div class="attendance-status" style="background-color: #d4edda; color: #155724;">
+                        Attendance marked for today
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Mess Menu Card -->
+            <div class="dashboard-card">
+                <h2><i class="fas fa-utensils"></i> Mess Menu</h2>
+                <a href="{{ url_for('view_menu_student') }}" class="btn btn-primary">View Menu</a>
+            </div>
+        </div>
+
+        <!-- Logout Button -->
+        <div class="mt-4 text-center mb-4">
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+
+        <!-- Complaints Modal -->
+        <div class="modal fade" id="complaintsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Your Complaints</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% if complaints %}
+                            {% for complaint in complaints %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">{{ complaint.created_at.strftime('%Y-%m-%d %H:%M') }}</h6>
+                                        <p class="card-text">{{ complaint.complaint_text }}</p>
+                                        <span class="badge bg-{{ 'success' if complaint.status == 'Resolved' else ('danger' if complaint.status == 'Rejected' else 'warning') }}">
+                                            {{ complaint.status }}
+                                        </span>
+                                        {% if complaint.response_text %}
+                                            <div class="mt-2">
+                                                <strong>Response:</strong>
+                                                <p>{{ complaint.response_text }}</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>No complaints found.</p>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ url_for('submit_complaint') }}" class="btn btn-primary">Submit New Complaint</a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this script at the end of the body -->
+    <script>
+        // Auto-hide flash messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const flashMessages = document.querySelectorAll('.flash-message');
+                flashMessages.forEach(function(message) {
+                    message.style.opacity = '0';
+                    message.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(function() {
+                        message.remove();
+                    }, 500);
+                });
+            }, 5000);
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

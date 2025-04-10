@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Hostel Management</title>
+
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+            color: #333;
+            text-align: center;
+        }
+
+        /* Navigation Bar */
+        
+        nav ul {
+            margin-right:-90%;
+            margin-top: 4px;
+            list-style: none;
+            padding: 9px;
+            
+        }
+        
+        nav ul li {
+            display: inline;
+            margin: 30px;
+        }
+        
+        nav ul li a {
+            color: rgb(255, 255, 255);
+            text-decoration: none;
+            font-size: 20px;
+            padding: 5px 10px; /* Adds padding around the link */
+            background: orange; /* Adds black background only around the word */
+            border-radius: 5px;
+        }
+        nav ul li a:hover {
+            background:black;
+            color:white;
+            border-radius: 5px;
+        }
+
+        
+        .gallery-container {
+            margin-top: 1px;
+            margin-bottom:2px;
+            
+        }
+        
+        .gallery {
+            width: 500px;
+            height: 400px;
+            margin: auto;
+            overflow: hidden;
+            border: 5px solid rgb(248, 245, 245);
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(17, 17, 17, 0.5);
+        }
+        
+        .gallery img {
+            width: 100%;
+            height: 120%;
+            object-fit: cover;
+        }
+
+
+
+        /* Header */
+        header {
+            margin-top:-30px;
+            color: black;
+            padding: 2px 0;
+            font-size:19px;
+        }
+
+        /* About Section */
+        .about-container {
+            
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 1px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #444;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            background: #333;
+            color: white;
+            padding: 10px 0;
+            margin-top: 20px;
+        }
+        .social-icons {
+            margin-top: 10px;
+        }
+        
+        .social-icons a, .social-icons i {
+            font-size: 24px;
+            margin: 0 15px;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .social-icons i:hover {
+            color: #FFD700; /* Changes color on hover */
+        }
+        
+        .social-icons span {
+            font-size: 18px;
+            margin-left: 5px;
+            color: white;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <nav>
+        <ul>
+            <li><a href="/">Back To Home</a></li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>About Our Hostel Management System</h1>
+    </header>
+    
+    <!-- Hostel Gallery -->
+    <section class="gallery-container">
+        <div class="gallery">
+            <img id="galleryImage" src="{{ url_for('static', filename='images/hostel1.jpg') }}" alt="Hostel Image">
+        </div>
+    </section>
+
+
+    <section class="about-container">
+        <h2>About Hostel</h2>
+        <p>Our Hostel Management System is designed to provide students and staff with a seamless experience. 
+        From booking rooms to managing facilities, we ensure a smooth and efficient hostel stay.</p>
+
+        <h2>Our Mission</h2>
+        <p>To provide a well-structured and user-friendly system that enhances hostel living, making it more 
+        organized and hassle-free.</p>
+
+        <h2>Why Choose Us?</h2>
+        <p>✔ Easy room booking<br>✔ Secure login for students & staff<br>✔ 24/7 facility management<br>✔ User-friendly interface</p>
+    </section>
+
+ <footer>
+    <p>&copy; 2024 Hostel Management System | All Rights Reserved</p>
+    
+    <!-- Social Media Icons -->
+    <div class="social-icons">
+        <!-- Instagram Icon (Opens Insta Page) -->
+        <a href="https://www.instagram.com/YOUR_INSTAGRAM_USERNAME" target="_blank">
+            <i class="fa-brands fa-instagram"></i>
+        </a>
+
+        <!-- WhatsApp Icon with Phone Number 
+        <i class="fa-brands fa-whatsapp"></i>
+        <span>+91 9876543210</span>-->
+
+        <!-- Home Icon (Opens Hostel Location in Google Maps) -->
+        <a href="https://www.google.com/maps/place/YOUR_HOSTEL_LOCATION" target="_blank">
+            <i class="fa-solid fa-house"></i>
+        </a>
+    </div>
+</footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+
+
+
+    
+    <script>
+        // Auto-changing images every 3 seconds
+        const images = [
+        "{{ url_for('static', filename='images/hostel1.jpg') }}",
+        "{{ url_for('static', filename='images/hostel2.jpg') }}",
+        "{{ url_for('static', filename='images/bed.jpg') }}",
+        "{{ url_for('static', filename='images/menu.jpg') }}",
+        "{{ url_for('static', filename='images/food.jpg') }}"
+    ];
+    
+
+        let index = 0;
+        function changeImage() {
+            index = (index + 1) % images.length;
+            document.getElementById("galleryImage").src = images[index];
+        }
+
+        setInterval(changeImage, 1700); // Change image every 3 seconds
+    </script>
+
+
+</body>
+</html>

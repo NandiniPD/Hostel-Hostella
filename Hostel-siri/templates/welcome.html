@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Hostella</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            position: relative;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: background-image 1s ease-in-out;
+            z-index: -2;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 40px;
+            border-radius: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .welcome-header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color:rgb(209, 212, 219);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .welcome-header p {
+            font-size: 1.2em;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .feature-icon {
+            font-size: 2.5em;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .feature-card:nth-child(1) .feature-title {
+            color:rgb(237, 127, 182);
+        }
+
+        .feature-card:nth-child(2) .feature-title {
+            color:rgb(222, 206, 113);
+        }
+
+        .feature-card:nth-child(3) .feature-title {
+            color: #98fb98;
+        }
+
+        .feature-card:nth-child(4) .feature-title {
+            color: #87ceeb;
+        }
+
+        .feature-description {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-section {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cta-title {
+            font-size: 1.8em;
+            color: #ff69b4;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .cta-section p {
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: rgba(26, 42, 108, 0.8);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: rgba(26, 42, 108, 0.9);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.25);
+        color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .welcome-header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-container"></div>
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="welcome-header">
+        <h1>Welcome to Hostella</h1>
+            <p>Your Complete Hostel Management Solution</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-home feature-icon"></i>
+                <h3 class="feature-title">Modern Accommodation</h3>
+                <p class="feature-description">Comfortable and well-maintained rooms with modern amenities for a pleasant stay.</p>
+    </div>
+
+            <div class="feature-card">
+                <i class="fas fa-utensils feature-icon"></i>
+                <h3 class="feature-title">Quality Dining</h3>
+                <p class="feature-description">Nutritious and delicious meals served in our hygienic mess facility.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fas fa-shield-alt feature-icon"></i>
+                <h3 class="feature-title">24/7 Security</h3>
+                <p class="feature-description">Round-the-clock security measures to ensure your safety and peace of mind.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fas fa-wifi feature-icon"></i>
+                <h3 class="feature-title">Modern Amenities</h3>
+                <p class="feature-description">High-speed internet, laundry services, and recreational facilities.</p>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2 class="cta-title">Ready to Join Our Community?</h2>
+            <p>Experience comfortable living with modern amenities and excellent services.</p>
+            <div class="button-group">
+                <a href="{{ url_for('login') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login Now
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const images = [
+            '{{ url_for("static", filename="background.jpeg") }}',
+            '{{ url_for("static", filename="background1.jpg") }}',
+            '{{ url_for("static", filename="background2.jpg") }}',
+            '{{ url_for("static", filename="background3.jpg") }}'
+        ];
+
+        let index = 0;
+        const backgroundContainer = document.querySelector('.background-container');
+
+        function changeBackground() {
+            backgroundContainer.style.backgroundImage = `url(${images[index]})`;
+            index = (index + 1) % images.length;
+        }
+
+        setInterval(changeBackground, 3000);
+        changeBackground();
+    </script>
+</body>
+</html>

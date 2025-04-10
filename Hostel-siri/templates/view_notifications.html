@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Your Notifications</h2>
+        </div>
+        <div class="card-body">
+            {% if notifications %}
+                <div class="list-group">
+                    {% for notification in notifications %}
+                        <div class="list-group-item {% if not notification.is_read %}list-group-item-info{% endif %}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">
+                                    <i class="fas fa-bell"></i> 
+                                    Complaint Update: {{ notification.category }}
+                                </h5>
+                                <small class="text-muted">
+                                    {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                            </div>
+                            <p class="mb-1">{{ notification.message }}</p>
+                            <small>
+                                Status: 
+                                <span class="badge {% if notification.complaint_status == 'Resolved' %}bg-success{% elif notification.complaint_status == 'Pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ notification.complaint_status }}
+                                </span>
+                            </small>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> You have no notifications.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

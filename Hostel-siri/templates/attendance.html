@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <!-- Chart.js Library -->
+</head>
+<style>
+    .container {
+        text-align: center;
+        margin-top: 50px;
+    }
+    
+    canvas {
+        max-width: 400px;
+        margin: 20px auto;
+    }
+    
+    .back-btn {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-top: 20px;
+    }
+    
+    .back-btn:hover {
+        background-color: #0056b3;
+    }
+</style>
+<body>
+
+    <div class="container">
+        <h2>Attendance Overview</h2>
+        <canvas id="attendanceChart"></canvas>  <!-- Pie Chart Canvas -->
+
+        <a href="{{ url_for('student_dashboard') }}" class="back-btn">Back to Dashboard</a>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        const attendanceChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Present', 'Absent', 'Late'],
+                datasets: [{
+                    data: [80, 15, 5],  // Example attendance data (adjust as needed)
+                    backgroundColor: ['#4CAF50', '#F44336', '#FFC107'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

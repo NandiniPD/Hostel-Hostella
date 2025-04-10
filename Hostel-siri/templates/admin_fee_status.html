@@ -1,0 +1,39 @@
+<form action="{{ url_for('submit_fee_payment') }}" method="POST" class="mb-4">
+    <div class="mb-3">
+        <label class="form-label">Student</label>
+        <select name="student_id" class="form-select" required>
+            <option value="">Select Student</option>
+            {% for student in students %}
+            <option value="{{ student.id }}">{{ student.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Semester</label>
+        <select name="semester" class="form-select" required>
+            <option value="">Select Semester</option>
+            <option value="Semester 1">Semester 1</option>
+            <option value="Semester 2">Semester 2</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Amount</label>
+        <input type="number" name="amount" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Payment Method</label>
+        <select name="payment_method" class="form-select" required>
+            <option value="">Select Payment Method</option>
+            <option value="Cash">Cash</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="UPI">UPI</option>
+            <option value="Cheque">Cheque</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Transaction ID</label>
+        <input type="text" name="transaction_id" class="form-control">
+        <small class="text-muted">Required for Bank Transfer/UPI/Cheque payments</small>
+    </div>
+    <button type="submit" class="btn btn-primary">Record Payment</button>
+</form> 
