@@ -1,17 +1,17 @@
 import pytest
-from flask import Flask
+from app import app
+
+@pytest.fixture
+def client():
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
+
+def test_home_page(client):
+    """Test that home page loads successfully"""
+    rv = client.get('/')
+    assert rv.status_code == 200
 
 def test_app_creation():
-    app = Flask(__name__)
-    assert app is not None
-
-def test_index_route():
-    app = Flask(__name__)
-    @app.route('/')
-    def index():
-        return 'Hello, World!'
-    
-    client = app.test_client()
-    response = client.get('/')
-    assert response.status_code == 200
-    assert b'Hello, World!' in response.data 
+    """Test Flask app creation"""
+    assert app is not None 
