@@ -15,7 +15,7 @@ app.config['SESSION_TYPE'] = "filesystem"
 db_config = {
     'host': os.getenv('MYSQL_HOST', 'localhost'),
     'user': os.getenv('MYSQL_USER', 'root'),
-    'password': os.getenv('MYSQL_PASSWORD', ''),
+    'password': os.getenv('MYSQL_PASSWORD', 'qwerty1234'),
     'database': os.getenv('MYSQL_DB', 'hostel_db')
 }
 
