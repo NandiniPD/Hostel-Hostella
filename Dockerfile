@@ -16,9 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && pip install --no-cache-dir -r requirements.txt
 
 # Copy only necessary files
-COPY app.py .
-COPY templates/ templates/
-COPY static/ static/
+COPY . .
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -32,4 +30,4 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 10000
 
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", "app:app"]
+CMD ["python", "app.py"]
