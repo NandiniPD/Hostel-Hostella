@@ -1,17 +1,35 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9
+FROM python:3.9-slim
 
-# Set the working directory
+# Set working directory in container
 WORKDIR /app
 
-# Copy the project files into the container
-COPY . /app
+# Copy requirements file
+COPY requirements.txt .
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install only required system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    build-essential \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Expose the port Flask runs on
-EXPOSE 5000
+# Copy only necessary files
+COPY app.py .
+COPY templates/ templates/
+COPY static/ static/
 
-# Run the application
-CMD ["python", "app.py"]
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PORT=10000 \
+    MYSQL_HOST=localhost \
+    MYSQL_USER=root \
+    MYSQL_PASSWORD=qwerty1234 \
+    MYSQL_DB=hostel_db
+
+# Expose the port the app runs on
+EXPOSE 10000
+
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:10000", "app:app"]
