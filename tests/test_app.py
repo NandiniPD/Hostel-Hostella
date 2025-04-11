@@ -20,4 +20,4 @@ def test_home_page(mock_db, client):
 
 def test_app_creation():
     """Test Flask app creation"""
-    assert app is not None 
+    assert app is not None
