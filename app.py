@@ -6,10 +6,11 @@ from datetime import timedelta, datetime
 import os
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # Set session duration
-app.config['SESSION_PERMANENT'] = False
+app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+app.config['SESSION_PERMANENT'] = True
 app.config['SESSION_TYPE'] = "filesystem"
+app.config['SESSION_FILE_DIR'] = "/tmp/flask_session"  # Use tmp directory for sessions
 
 # Update database configuration to use environment variables
 db_config = {
@@ -22,10 +23,12 @@ db_config = {
 # Function to get MySQL Connection
 def get_db_connection():
     try:
+        print(f"Attempting to connect to database at {db_config['host']}")
         conn = mysql.connector.connect(**db_config)
+        print("Database connection successful")
         return conn
     except Exception as e:
-        print(f"Database connection error: {e}")
+        print(f"Database connection error: {str(e)}")
         raise
 
 # Flask-Login setup
@@ -79,52 +82,49 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        role = request.form.get('role', 'student')
-        
-        print(f"Login attempt - Email: {email}, Role: {role}")  # Debug print
-        
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
         try:
-            if role == 'admin':
-                # Check admin credentials
+            email = request.form['email']
+            password = request.form['password']
+            
+            print(f"Login attempt for email: {email}")
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            
+            # First check registered students
+            cursor.execute("SELECT * FROM registered_students WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            
+            if not user:
+                # Then check admins
                 cursor.execute("SELECT * FROM admins WHERE email = %s", (email,))
-                admin = cursor.fetchone()
-                print(f"Admin check - Found: {admin is not None}")  # Debug print
+                user = cursor.fetchone()
+            
+            if user and check_password_hash(user['password'], password):
+                user_obj = User(str(user['id']), user['email'], user['password'], 
+                              'admin' if 'role' in user else 'student',
+                              user.get('name'))
+                login_user(user_obj)
+                print(f"Login successful for user: {email}")
                 
-                if admin and admin['password'] == password:  # Direct comparison for admin
-                    user = User(str(admin['id']), admin['email'], admin['password'], 'admin')
-                    login_user(user)
-                    flash('Welcome Admin!', 'success')
+                if 'role' in user:  # Admin
                     return redirect(url_for('admin_dashboard'))
+                else:  # Student
+                    return redirect(url_for('student_dashboard'))
             else:
-                # Check student credentials
-                cursor.execute("SELECT * FROM registered_students WHERE email = %s", (email,))
-                student = cursor.fetchone()
-                print(f"Student check - Found: {student is not None}")  # Debug print
+                print(f"Login failed for user: {email}")
+                flash('Invalid email or password', 'danger')
+                return redirect(url_for('login'))
                 
-                if student:
-                    # Use check_password_hash for students
-                    if check_password_hash(student['password'], password):
-                        user = User(str(student['id']), student['email'], student['password'], 'student', student['name'])
-                        login_user(user)
-                        flash('Login successful!', 'success')
-                        return redirect(url_for('student_dashboard'))
-            
-            flash('Invalid email or password', 'danger')
-            return redirect(url_for('login'))
-            
         except Exception as e:
-            print(f"Login error: {e}")
-            flash('An error occurred during login', 'danger')
+            print(f"Login error: {str(e)}")
+            flash('An error occurred during login. Please try again.', 'danger')
             return redirect(url_for('login'))
             
         finally:
-            cursor.close()
-            conn.close()
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conn' in locals():
+                conn.close()
             
     return render_template('login.html')
 
