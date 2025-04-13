@@ -14,23 +14,36 @@ app.config['SESSION_FILE_DIR'] = "/tmp/flask_session"  # Use tmp directory for s
 
 # Update database configuration to use environment variables
 db_config = {
-    'host': os.getenv('MYSQL_HOST', 'localhost'),
-    'user': os.getenv('MYSQL_USER', 'root'),
-    'password': os.getenv('MYSQL_PASSWORD', 'your_mysql_password_here'),
-    'database': os.getenv('MYSQL_DB', 'hostel_db')
+    'host': os.getenv('MYSQL_HOST'),
+    'user': os.getenv('MYSQL_USER'),
+    'password': os.getenv('MYSQL_PASSWORD'),
+    'database': os.getenv('MYSQL_DB'),
+    'port': int(os.getenv('MYSQL_PORT', '3306')),
+    'connect_timeout': 30
 }
 
 # Function to get MySQL Connection
 def get_db_connection():
     try:
-        print(f"Attempting to connect to database with host: {db_config['host']}, user: {db_config['user']}, database: {db_config['database']}")
+        # Print connection attempt details (will show in Render.com logs)
+        print(f"Attempting to connect to database at {db_config['host']} with user {db_config['user']}")
+        
+        if not all([db_config['host'], db_config['user'], db_config['password'], db_config['database']]):
+            error_msg = "Missing database configuration. Please check environment variables:"
+            if not db_config['host']: error_msg += " MYSQL_HOST"
+            if not db_config['user']: error_msg += " MYSQL_USER"
+            if not db_config['password']: error_msg += " MYSQL_PASSWORD"
+            if not db_config['database']: error_msg += " MYSQL_DB"
+            print(error_msg)
+            raise Exception(error_msg)
+
         conn = mysql.connector.connect(**db_config)
         print("Database connection successful!")
         return conn
     except mysql.connector.Error as e:
         print(f"MySQL Connection Error: {str(e)}")
         if e.errno == 2003:
-            print("Could not connect to MySQL server - check if host is correct and accessible")
+            print(f"Could not connect to MySQL server at {db_config['host']} - check if host is correct and accessible")
         elif e.errno == 1045:
             print("Access denied - check username and password")
         elif e.errno == 1049:
@@ -1639,6 +1652,19 @@ def get_payment_history(student_id):
     finally:
         cursor.close()
         conn.close()
+
+@app.route('/test_db')
+def test_db():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1')
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "success", "message": "Database connection successful!"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
