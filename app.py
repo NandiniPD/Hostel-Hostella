@@ -14,10 +14,10 @@ app.config['SESSION_FILE_DIR'] = "/tmp/flask_session"  # Use tmp directory for s
 
 # Update database configuration to use environment variables
 db_config = {
-    'host': os.getenv('MYSQL_HOST'),
-    'user': os.getenv('MYSQL_USER'),
-    'password': os.getenv('MYSQL_PASSWORD'),
-    'database': os.getenv('MYSQL_DB'),
+    'host': os.getenv('MYSQL_HOST', 'localhost'),
+    'user': os.getenv('MYSQL_USER', 'root'),
+    'password': os.getenv('MYSQL_PASSWORD', 'qwerty1234'),
+    'database': os.getenv('MYSQL_DB', 'hostel_db'),
     'port': int(os.getenv('MYSQL_PORT', '3306')),
     'connect_timeout': 30
 }
@@ -72,10 +72,12 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
+    conn = None
+    cursor = None
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor(buffered=True, dictionary=True)
+        
         # First check registered students
         cursor.execute("SELECT * FROM registered_students WHERE id = %s", (user_id,))
         user = cursor.fetchone()
@@ -90,8 +92,10 @@ def load_user(user_id):
             
         return None
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 
@@ -104,69 +108,71 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        conn = None
+        cursor = None
         try:
             email = request.form['email']
             password = request.form['password']
             
             print(f"Login attempt for email: {email}")
-            try:
-                conn = get_db_connection()
-                print("Database connection established for login")
-            except Exception as e:
-                print(f"Failed to connect to database during login: {str(e)}")
-                flash("Database connection error. Please try again later.", "danger")
-                return redirect(url_for('login'))
-
-            cursor = conn.cursor(dictionary=True)
+            conn = get_db_connection()
+            print("Database connection established for login")
             
-            try:
-                # First check registered students
-                print("Checking registered_students table")
-                cursor.execute("SELECT * FROM registered_students WHERE email = %s", (email,))
+            cursor = conn.cursor(buffered=True, dictionary=True)
+            
+            # First check registered students
+            print("Checking registered_students table")
+            cursor.execute("SELECT * FROM registered_students WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            
+            if not user:
+                print("User not found in students, checking admins table")
+                # Then check admins
+                cursor.execute("SELECT * FROM admins WHERE email = %s", (email,))
                 user = cursor.fetchone()
-                
-                if not user:
-                    print("User not found in students, checking admins table")
-                    # Then check admins
-                    cursor.execute("SELECT * FROM admins WHERE email = %s", (email,))
-                    user = cursor.fetchone()
-                
                 if user:
-                    print(f"User found with ID: {user['id']}")
-                    if check_password_hash(user['password'], password):
-                        print("Password verified successfully")
-                        user_obj = User(str(user['id']), user['email'], user['password'], 
-                                    'admin' if 'role' in user else 'student',
-                                    user.get('name'))
-                        login_user(user_obj)
-                        print(f"Login successful for user: {email}")
-                        
-                        if 'role' in user:  # Admin
-                            return redirect(url_for('admin_dashboard'))
-                        else:  # Student
-                            return redirect(url_for('student_dashboard'))
+                    user['role'] = 'admin'  # Mark as admin for logic below
+            else:
+                user['role'] = 'student'  # Mark as student for logic below
+            
+            if user:
+                print(f"User found with ID: {user['id']}")
+                # Plain text check for admin, hash check for student
+                if (user['role'] == 'admin' and user['password'] == password) or \
+                   (user['role'] == 'student' and check_password_hash(user['password'], password)):
+                    print("Password verified successfully")
+                    user_obj = User(str(user['id']), user['email'], user['password'], 
+                                user['role'],
+                                user.get('name'))
+                    login_user(user_obj)
+                    print(f"Login successful for user: {email}")
+                    
+                    if user['role'] == 'admin':
+                        return redirect(url_for('admin_dashboard'))
                     else:
-                        print("Password verification failed")
+                        return redirect(url_for('student_dashboard'))
                 else:
-                    print("No user found with provided email")
-                
-                flash('Invalid email or password', 'danger')
-                return redirect(url_for('login'))
-                
-            except mysql.connector.Error as e:
-                print(f"MySQL error during login: {str(e)}")
-                flash('Database error occurred. Please try again.', 'danger')
-                return redirect(url_for('login'))
-                
+                    print("Password verification failed")
+            else:
+                print("No user found with provided email")
+            
+            flash('Invalid email or password', 'danger')
+            return redirect(url_for('login'))
+            
+        except mysql.connector.Error as e:
+            print(f"MySQL error during login: {str(e)}")
+            flash('Database error occurred. Please try again.', 'danger')
+            return redirect(url_for('login'))
+            
         except Exception as e:
             print(f"Login error: {str(e)}")
             flash('An error occurred during login. Please try again.', 'danger')
             return redirect(url_for('login'))
             
         finally:
-            if 'cursor' in locals():
+            if cursor:
                 cursor.close()
-            if 'conn' in locals():
+            if conn:
                 conn.close()
             
     return render_template('login.html')
