@@ -1,9 +1,12 @@
 from flask import Flask, render_template, jsonify,request, redirect, url_for, flash, session
-import mysql.connector,webbrowser   
+import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from datetime import timedelta, datetime
 import os,time
+from dotenv import load_dotenv
+load_dotenv()
+
 
 
 app = Flask(__name__)
@@ -32,19 +35,15 @@ def get_db_connection():
     max_retries = 30
     while retry_count < max_retries:
         try:
-            conn = mysql.connector.connect(
-                host='db',
-                user='root',
-                password='qwerty1234',
-                database='hostel_db'
-            )
+            conn = mysql.connector.connect(**db_config)
             return conn
         except mysql.connector.Error as e:
             retry_count += 1
             print(f"MySQL Connection Error: {e}")
             if retry_count >= max_retries:
                 raise
-            time.sleep(1)  # Wait 1 second before retry
+            time.sleep(1)
+
 
 
 # Flask-Login setup
@@ -63,33 +62,6 @@ class User(UserMixin):
     def get_id(self):
         return str(self.id)
 
-
-# @login_manager.user_loader
-# def load_user(user_id):
-#     conn = None
-#     cursor = None
-#     try:
-#         conn = get_db_connection()
-#         cursor = conn.cursor(buffered=True, dictionary=True)
-        
-#         # First check registered students
-#         cursor.execute("SELECT * FROM registered_students WHERE id = %s", (user_id,))
-#         user = cursor.fetchone()
-#         if user:
-#             return User(str(user['id']), user['email'], user['password'], 'student', user['name'])
-            
-#         # Then check admins
-#         cursor.execute("SELECT * FROM admins WHERE id = %s", (user_id,))
-#         admin = cursor.fetchone()
-#         if admin:
-#             return User(str(admin['id']), admin['email'], admin['password'], 'admin', admin.get('name', 'admin')) #return User(str(admin['id']), admin['email'], admin['password'], 'Admin')
-            
-#         return None
-#     finally:
-#         if cursor:
-#             cursor.close()
-#         if conn:
-#             conn.close()
 
 
 @login_manager.user_loader
@@ -811,8 +783,8 @@ def admin_dashboard():
     try:
         cursor.execute("""
             SELECT complaints.id, registered_students.name AS student_name, 
-                   complaints.complaint_text, complaints.status 
-            FROM complaints 
+                complaints.description AS complaint_text, complaints.status 
+            FROM complaints
             JOIN registered_students ON complaints.student_id = registered_students.id
         """)
         complaints = cursor.fetchall()
@@ -970,12 +942,18 @@ def admin_view_attendance():
 
     # Assuming attendance table has student_id and status (Present/Absent)
     query = """
-        SELECT rs.id, rs.name, COUNT(a.status) AS total_present, 
-               (COUNT(a.status) / (180)) * 100 AS attendance_percentage
-        FROM registered_students rs
-        LEFT JOIN attendance a ON rs.id = a.student_id AND a.status = 'Present'
+        SELECT
+            rs.id,
+            rs.name,
+            COUNT(a.status) AS total_present,
+            (COUNT(a.status) / 180.0) * 100 AS attendance_percentage
+        FROM registered_students AS rs
+        LEFT JOIN attendance AS a
+            ON rs.id = a.student_id
+            AND a.status = 'Present'
         GROUP BY rs.id, rs.name
-        ORDER BY attendance_percentage ASC
+        ORDER BY rs.id ASC;
+
     """
     cursor.execute(query)
     attendance_records = cursor.fetchall()
@@ -1001,7 +979,7 @@ def view_fee_status():
     try:
         # Get all students with their fee status
         cursor.execute("""
-            SELECT 
+            SELECT
                 rs.id,
                 rs.name,
                 rs.email,
@@ -1027,8 +1005,8 @@ def view_fee_status():
         students = cursor.fetchall()
         
         return render_template('view_fee_status.html', 
-                             fee_status=fee_status,
-                             students=students)
+                            fee_status=fee_status,
+                            students=students)
         
     except Exception as e:
         print(f"Error fetching fee status: {e}")
@@ -1718,5 +1696,5 @@ def test_db():
 if __name__ == '__main__':
     # Initialize rooms table
     initialize_rooms()
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)), debug=True)
 
