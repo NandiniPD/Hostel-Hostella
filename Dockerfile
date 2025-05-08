@@ -1,37 +1,29 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Use an official Python image
+FROM python:3.11-slim
 
-# Set working directory in container
+# Set working directory
 WORKDIR /app
 
-# Install wait-for-it script
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
     default-libmysqlclient-dev \
-    build-essential \
     pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+    python3-dev \
+    build-essential \
+    && apt-get clean
 
-# Copy requirements file
+# Copy dependencies
 COPY requirements.txt .
 
-# Install Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy the rest of the application
+# Copy app files
 COPY . .
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PORT=10000 \
-    MYSQL_HOST=host.docker.internal \
-    MYSQL_USER=root \
-    MYSQL_PASSWORD=qwerty1234 \
-    MYSQL_DB=hostel_db \
-    MYSQL_PORT=3306
+# Expose the app port
+EXPOSE 5000
 
-# Expose the port the app runs on
-EXPOSE 10000
-
-# Command to run the application
-CMD ["python", "app.py"] 
+# Run the app
+CMD ["python", "app.py"]

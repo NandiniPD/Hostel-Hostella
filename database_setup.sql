@@ -35,14 +35,15 @@ CREATE TABLE IF NOT EXISTS mess_menu (
 );
 
 -- Create complaints table
-CREATE TABLE IF NOT EXISTS complaints (
+CREATE TABLE complaints (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
-    complaint_text TEXT NOT NULL,
     category ENUM('Academic', 'Facility', 'Discipline', 'Other') NOT NULL,
-    response_text TEXT DEFAULT NULL,
-    status ENUM('Pending', 'Resolved', 'Rejected') DEFAULT 'Pending',
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description TEXT NOT NULL,
+    status ENUM('Pending', 'Resolved') DEFAULT 'Pending',
+    response TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES registered_students(id) ON DELETE CASCADE
 );
 
@@ -65,15 +66,15 @@ CREATE TABLE IF NOT EXISTS attendance (
 );
 
 -- Create notifications table
-CREATE TABLE IF NOT EXISTS notifications (
+
+CREATE TABLE notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
-    complaint_id INT NOT NULL,
+    complaint_id INT NULL,
     message TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES registered_students(id) ON DELETE CASCADE,
-    FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
+    FOREIGN KEY (student_id) REFERENCES registered_students(id) ON DELETE CASCADE
 );
 
 -- Insert default admin
@@ -88,3 +89,21 @@ INSERT IGNORE INTO mess_menu (day, breakfast, lunch, dinner) VALUES
 ('Friday', 'Puri & Bhaji', 'Biryani', 'Dal & Chapati'),
 ('Saturday', 'Bread & Omelette', 'Chole Bhature', 'Fried Rice'),
 ('Sunday', 'Pancakes', 'Vegetable Pulao', 'Daal & Roti'); 
+
+
+CREATE TABLE fee_status (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    semester VARCHAR(20) NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    amount_paid DECIMAL(10,2) DEFAULT 0.00,
+    due_date DATE NOT NULL,
+    status ENUM('Pending', 'Paid', 'Overdue') DEFAULT 'Pending',
+    payment_date DATETIME DEFAULT NULL,
+    payment_method VARCHAR(50) DEFAULT NULL,
+    transaction_id VARCHAR(100) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES registered_students(id),
+    UNIQUE KEY unique_student_semester (student_id, semester)
+);

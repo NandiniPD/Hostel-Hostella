@@ -1,9 +1,10 @@
 from flask import Flask, render_template, jsonify,request, redirect, url_for, flash, session
-import mysql.connector,webbrowser
+import mysql.connector,webbrowser   
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from datetime import timedelta, datetime
-import os
+import os,time
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey')
@@ -13,45 +14,38 @@ app.config['SESSION_TYPE'] = "filesystem"
 app.config['SESSION_FILE_DIR'] = "/tmp/flask_session"  # Use tmp directory for sessions
 
 # Update database configuration to use environment variables
+
+
 db_config = {
-    'host': os.getenv('MYSQL_HOST', 'localhost'),
+    'host': os.getenv('MYSQL_HOST', 'db'),
     'user': os.getenv('MYSQL_USER', 'root'),
     'password': os.getenv('MYSQL_PASSWORD', 'qwerty1234'),
     'database': os.getenv('MYSQL_DB', 'hostel_db'),
-    'port': int(os.getenv('MYSQL_PORT', '3306')),
-    'connect_timeout': 30
+    'port': int(os.getenv('MYSQL_PORT', 3306)),
+    'connect_timeout': 30,
+    'charset': 'utf8mb4'  # optional but smart
 }
 
-# Function to get MySQL Connection
-def get_db_connection():
-    try:
-        # Print connection attempt details (will show in Render.com logs)
-        print(f"Attempting to connect to database at {db_config['host']} with user {db_config['user']}")
-        
-        if not all([db_config['host'], db_config['user'], db_config['password'], db_config['database']]):
-            error_msg = "Missing database configuration. Please check environment variables:"
-            if not db_config['host']: error_msg += " MYSQL_HOST"
-            if not db_config['user']: error_msg += " MYSQL_USER"
-            if not db_config['password']: error_msg += " MYSQL_PASSWORD"
-            if not db_config['database']: error_msg += " MYSQL_DB"
-            print(error_msg)
-            raise Exception(error_msg)
 
-        conn = mysql.connector.connect(**db_config)
-        print("Database connection successful!")
-        return conn
-    except mysql.connector.Error as e:
-        print(f"MySQL Connection Error: {str(e)}")
-        if e.errno == 2003:
-            print(f"Could not connect to MySQL server at {db_config['host']} - check if host is correct and accessible")
-        elif e.errno == 1045:
-            print("Access denied - check username and password")
-        elif e.errno == 1049:
-            print("Database does not exist - check database name")
-        raise
-    except Exception as e:
-        print(f"Unexpected error during database connection: {str(e)}")
-        raise
+def get_db_connection():
+    retry_count = 0
+    max_retries = 30
+    while retry_count < max_retries:
+        try:
+            conn = mysql.connector.connect(
+                host='db',
+                user='root',
+                password='qwerty1234',
+                database='hostel_db'
+            )
+            return conn
+        except mysql.connector.Error as e:
+            retry_count += 1
+            print(f"MySQL Connection Error: {e}")
+            if retry_count >= max_retries:
+                raise
+            time.sleep(1)  # Wait 1 second before retry
+
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -70,6 +64,34 @@ class User(UserMixin):
         return str(self.id)
 
 
+# @login_manager.user_loader
+# def load_user(user_id):
+#     conn = None
+#     cursor = None
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor(buffered=True, dictionary=True)
+        
+#         # First check registered students
+#         cursor.execute("SELECT * FROM registered_students WHERE id = %s", (user_id,))
+#         user = cursor.fetchone()
+#         if user:
+#             return User(str(user['id']), user['email'], user['password'], 'student', user['name'])
+            
+#         # Then check admins
+#         cursor.execute("SELECT * FROM admins WHERE id = %s", (user_id,))
+#         admin = cursor.fetchone()
+#         if admin:
+#             return User(str(admin['id']), admin['email'], admin['password'], 'admin', admin.get('name', 'admin')) #return User(str(admin['id']), admin['email'], admin['password'], 'Admin')
+            
+#         return None
+#     finally:
+#         if cursor:
+#             cursor.close()
+#         if conn:
+#             conn.close()
+
+
 @login_manager.user_loader
 def load_user(user_id):
     conn = None
@@ -78,17 +100,18 @@ def load_user(user_id):
         conn = get_db_connection()
         cursor = conn.cursor(buffered=True, dictionary=True)
         
-        # First check registered students
+        # Check both tables
         cursor.execute("SELECT * FROM registered_students WHERE id = %s", (user_id,))
-        user = cursor.fetchone()
-        if user:
-            return User(str(user['id']), user['email'], user['password'], 'student', user['name'])
-            
-        # Then check admins
+        student = cursor.fetchone()
+        
         cursor.execute("SELECT * FROM admins WHERE id = %s", (user_id,))
         admin = cursor.fetchone()
-        if admin:
-            return User(str(admin['id']), admin['email'], admin['password'], 'admin')
+        
+        # Use the session to determine which one to return
+        if admin and session.get('user_role') == 'admin':
+            return User(str(admin['id']), admin['email'], admin['password'], 'admin', admin.get('name', 'Admin'))
+        elif student:
+            return User(str(student['id']), student['email'], student['password'], 'student', student['name'])
             
         return None
     finally:
@@ -99,54 +122,62 @@ def load_user(user_id):
 
 
 
+
 # Home Route (Welcome Page)
 @app.route('/')
 def home():
     return render_template('welcome.html')
 
-#login page
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         conn = None
         cursor = None
         try:
+            # Get form data
             email = request.form['email']
             password = request.form['password']
             
             print(f"Login attempt for email: {email}")
+
+            # Establish DB connection
             conn = get_db_connection()
             print("Database connection established for login")
-            
+
+            # Create cursor
             cursor = conn.cursor(buffered=True, dictionary=True)
             
-            # First check registered students
+            # First check the registered students table
             print("Checking registered_students table")
             cursor.execute("SELECT * FROM registered_students WHERE email = %s", (email,))
             user = cursor.fetchone()
-            
+
             if not user:
                 print("User not found in students, checking admins table")
-                # Then check admins
+                # If not found in students, check the admins table
                 cursor.execute("SELECT * FROM admins WHERE email = %s", (email,))
                 user = cursor.fetchone()
                 if user:
-                    user['role'] = 'admin'  # Mark as admin for logic below
+                    user['role'] = 'admin'  # Mark as admin for later logic
             else:
-                user['role'] = 'student'  # Mark as student for logic below
-            
+                user['role'] = 'student'  # Mark as student
+
+            # If user is found, proceed with password check
             if user:
                 print(f"User found with ID: {user['id']}")
-                # Plain text check for admin, hash check for student
+
+                # Password verification: plain text for admin, hash check for student
                 if (user['role'] == 'admin' and user['password'] == password) or \
                    (user['role'] == 'student' and check_password_hash(user['password'], password)):
                     print("Password verified successfully")
-                    user_obj = User(str(user['id']), user['email'], user['password'], 
-                                user['role'],
-                                user.get('name'))
-                    login_user(user_obj)
+
+                    # Create user object and log in
+                    user_obj = User(str(user['id']), user['email'], user['password'], user['role'], user.get('name'))
+                    login_user(user_obj)  # Flask-Login's login_user function
                     print(f"Login successful for user: {email}")
-                    
+                    session['user_role'] = user['role']  # Add this line
+
+                    # Redirect based on user role
                     if user['role'] == 'admin':
                         return redirect(url_for('admin_dashboard'))
                     else:
@@ -154,28 +185,31 @@ def login():
                 else:
                     print("Password verification failed")
             else:
-                print("No user found with provided email")
+                print("No user found with the provided email")
             
             flash('Invalid email or password', 'danger')
             return redirect(url_for('login'))
-            
+
         except mysql.connector.Error as e:
             print(f"MySQL error during login: {str(e)}")
             flash('Database error occurred. Please try again.', 'danger')
             return redirect(url_for('login'))
-            
+
         except Exception as e:
             print(f"Login error: {str(e)}")
             flash('An error occurred during login. Please try again.', 'danger')
             return redirect(url_for('login'))
-            
+
         finally:
+            # Ensure the cursor and connection are closed
             if cursor:
                 cursor.close()
             if conn:
                 conn.close()
-            
+
+    # Render login page for GET request
     return render_template('login.html')
+
 
 
 # Welcome Page (Protected)
@@ -762,7 +796,11 @@ def admin_dashboard():
         flash("Please login first.", "warning")
         return redirect(url_for('login'))
         
-    if current_user.role != "admin":
+    # Use print statement to debug the role value
+    print(f"Current user role: {current_user.role}")
+        
+    # Accept any case for admin role
+    if current_user.role.lower() != "admin":
         flash("Access denied! Please login as admin.", "danger")
         return redirect(url_for('login'))
     
@@ -805,7 +843,7 @@ def view_registration():
             SELECT rs.*, r.room_type, r.status
             FROM registered_students rs
             LEFT JOIN rooms r ON rs.room_number = r.room_number
-            ORDER BY rs.id DESC
+            ORDER BY rs.id ASC
         """
         cursor.execute(query)
         students = cursor.fetchall()
@@ -937,7 +975,7 @@ def admin_view_attendance():
         FROM registered_students rs
         LEFT JOIN attendance a ON rs.id = a.student_id AND a.status = 'Present'
         GROUP BY rs.id, rs.name
-        ORDER BY attendance_percentage DESC
+        ORDER BY attendance_percentage ASC
     """
     cursor.execute(query)
     attendance_records = cursor.fetchall()
@@ -1587,20 +1625,20 @@ def admin_payment_history():
     try:
         # Get all payment records with student details
         cursor.execute("""
-            SELECT 
-                rs.name as student_name,
-                fs.semester,
-                fs.total_amount,
-                fs.amount_paid,
-                fs.payment_date,
-                fs.payment_method,
-                fs.transaction_id,
-                fs.status
-            FROM fee_status fs
-            JOIN registered_students rs ON fs.student_id = rs.id
-            WHERE fs.payment_date IS NOT NULL
-            ORDER BY fs.payment_date DESC
+        SELECT 
+            rs.name as student_name,
+            fs.semester,
+            fs.total_amount,
+            fs.amount_paid,
+            fs.payment_date,
+            fs.payment_method,
+            fs.transaction_id,
+            fs.status
+        FROM fee_status fs
+        JOIN registered_students rs ON fs.student_id = rs.id
+        ORDER BY fs.semester, rs.name
         """)
+
         payments = cursor.fetchall()
         
         # Get all students for the payment form
@@ -1624,40 +1662,45 @@ def admin_payment_history():
 def get_payment_history(student_id):
     if current_user.role != "admin":
         return jsonify({"error": "Access denied"}), 403
-    
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    
+
     try:
         cursor.execute("""
             SELECT 
-                fs.payment_date,
+                rs.name as student_name,
+                fs.semester,
+                fs.total_amount,
                 fs.amount_paid,
+                fs.payment_date,
                 fs.payment_method,
                 fs.transaction_id,
-                fs.status,
-                fs.semester
+                fs.status
             FROM fee_status fs
-            WHERE fs.student_id = %s 
-            AND fs.payment_date IS NOT NULL
-            ORDER BY fs.payment_date DESC
+            JOIN registered_students rs ON fs.student_id = rs.id
+            WHERE rs.id = %s
+            ORDER BY fs.semester, rs.name
         """, (student_id,))
         
         payments = cursor.fetchall()
-        
-        # Convert datetime objects to string format
+
+        # Fix: convert datetime safely
         for payment in payments:
             if payment['payment_date']:
                 payment['payment_date'] = payment['payment_date'].strftime('%Y-%m-%d %H:%M:%S')
-        
+
         return jsonify({"payments": payments})
-        
+
     except Exception as e:
         print(f"Error fetching payment history: {e}")
         return jsonify({"error": "Failed to fetch payment history"}), 500
     finally:
         cursor.close()
         conn.close()
+
+        
+        
 
 @app.route('/test_db')
 def test_db():
@@ -1671,7 +1714,9 @@ def test_db():
         return jsonify({"status": "success", "message": "Database connection successful!"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
+    
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    # Initialize rooms table
+    initialize_rooms()
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+

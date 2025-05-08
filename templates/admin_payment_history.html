@@ -75,8 +75,8 @@
                         <tr>
                             <td>{{ payment.student_name }}</td>
                             <td>{{ payment.semester }}</td>
-                            <td>₹{{ payment.amount_paid }}</td>
-                            <td>{{ payment.payment_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>₹{{ payment.amount_paid or '0.00' }}</td>
+                            <td>{{ payment.payment_date.strftime('%Y-%m-%d %H:%M') if payment.payment_date else '-' }}</td>
                             <td>{{ payment.payment_method }}</td>
                             <td>{{ payment.transaction_id or '-' }}</td>
                             <td>
